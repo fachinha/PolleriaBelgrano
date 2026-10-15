@@ -148,7 +148,8 @@ button {
   border-radius: var(--radius-full);
   transition: var(--transition);
   text-align: center;
-  white-space: nowrap;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .btn-sm {
@@ -686,7 +687,8 @@ button {
   align-items: center;
   gap: 0.5rem;
   overflow-x: auto;
-  padding: 0.5rem 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5rem 0.25rem 0.75rem 0.25rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -696,6 +698,7 @@ button {
 }
 
 .tab-btn {
+  flex-shrink: 0;
   font-size: 0.9rem;
   font-weight: 700;
   padding: 0.6rem 1.2rem;
@@ -1427,7 +1430,244 @@ button {
 }
 
 /* --------------------------------------------------------------------------
-   Responsive Media Queries
+   Mobile Rules & Bug Fixes (Pantallas <= 640px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  .container {
+    padding: 0 1rem;
+  }
+
+  /* Header móvil compacto */
+  .header-container {
+    height: 64px;
+  }
+
+  .brand-wrapper {
+    gap: 0.5rem;
+  }
+
+  .brand-logo-img {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand-name {
+    font-size: 1.05rem;
+  }
+
+  .brand-city {
+    font-size: 0.68rem;
+  }
+
+  .header-actions {
+    gap: 0.45rem;
+  }
+
+  .header-actions .btn-uber {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8rem;
+    gap: 0.35rem;
+  }
+
+  .mobile-toggle {
+    width: 38px;
+    height: 38px;
+    padding: 7px;
+  }
+
+  .mobile-nav-drawer {
+    top: 64px;
+    height: calc(100dvh - 64px);
+    height: calc(100vh - 64px);
+    padding: 1.25rem 1rem 3rem 1rem;
+  }
+
+  /* Hero móvil */
+  .hero-section {
+    padding: 2rem 0 2.5rem 0;
+  }
+
+  .hero-title {
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
+  }
+
+  .hero-description {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-cta-group {
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .hero-cta-group .btn {
+    width: 100%;
+    font-size: 0.95rem;
+    padding: 0.85rem 1.15rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .hero-badge-row {
+    gap: 0.4rem;
+  }
+
+  .hero-badge-location,
+  .hero-badge-delivery {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.65rem;
+  }
+
+  .hero-image-wrapper {
+    margin-top: 0.5rem;
+  }
+
+  .hero-floating-card {
+    position: static;
+    margin-top: 0.75rem;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    background: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Catálogo & Productos */
+  .catalog-section {
+    padding: 3rem 0;
+  }
+
+  .product-image-container {
+    height: 180px;
+  }
+
+  .product-content {
+    padding: 1rem;
+  }
+
+  .product-title {
+    font-size: 1.05rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .product-desc {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .product-price {
+    font-size: 1.2rem;
+  }
+
+  /* Secciones de Opiniones e Instagram */
+  .reviews-section,
+  .instagram-section,
+  .contact-section {
+    padding: 3rem 0;
+  }
+
+  .reviews-card,
+  .ig-card {
+    padding: 1.75rem 1.15rem;
+  }
+
+  .reviews-title,
+  .ig-title {
+    font-size: 1.45rem;
+  }
+
+  .reviews-text,
+  .ig-desc {
+    font-size: 0.95rem;
+  }
+
+  .btn-google,
+  .btn-instagram {
+    width: 100%;
+  }
+
+  /* Contacto y Mapa */
+  .map-wrapper {
+    height: 280px;
+  }
+
+  .contact-detail-card {
+    padding: 1rem;
+    gap: 0.85rem;
+  }
+
+  /* Footer & Otros Locales */
+  .footer-other-stores {
+    max-width: 100%;
+  }
+
+  .other-store-card {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .other-store-links {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .other-store-btn {
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 0.8rem;
+    padding: 0.45rem 0.85rem;
+  }
+
+  /* Botón Flotante WhatsApp */
+  .wa-float-btn {
+    bottom: 1rem;
+    right: 1rem;
+    width: 52px;
+    height: 52px;
+  }
+
+  .wa-float-tooltip {
+    display: none !important;
+  }
+}
+
+/* Teléfonos estrechos (320px - 420px) */
+@media (max-width: 420px) {
+  .brand-city {
+    display: none;
+  }
+
+  .header-actions .btn-uber span {
+    display: none;
+  }
+
+  .header-actions .btn-uber {
+    padding: 0.45rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+
+  .header-actions .btn-uber svg {
+    margin: 0;
+  }
+
+  .hero-trust-list {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Media Queries (Desktop & Tablet)
    -------------------------------------------------------------------------- */
 @media (min-width: 640px) {
   .hero-cta-group {
@@ -1437,9 +1677,6 @@ button {
     grid-template-columns: repeat(2, 1fr);
   }
   .quick-info-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .steps-grid {
     grid-template-columns: repeat(3, 1fr);
   }
   .footer-bottom {
