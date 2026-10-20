@@ -151,6 +151,14 @@
           <span>Pedir por Uber Eats</span>
         </a>
 
+        <!-- Botón Panel de Administración -->
+        <button id="open-admin-btn" class="btn-admin-nav" title="Panel de Administración (Modificar Precios, Fotos y Productos)" aria-label="Ingresar al Panel de Administración">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </button>
+
         <!-- Botón Hamburguesa Móvil -->
         <button id="mobile-toggle-btn" class="mobile-toggle" aria-label="Abrir menú de navegación" aria-expanded="false">
           <span class="toggle-line"></span>
@@ -168,6 +176,15 @@
         <li><a href="#productos" class="mobile-nav-link">Productos y Catálogo</a></li>
         <li><a href="#opiniones" class="mobile-nav-link">Dejanos tu opinión</a></li>
         <li><a href="#contacto" class="mobile-nav-link">Contacto y Ubicación</a></li>
+        <li>
+          <button id="mobile-open-admin-btn" class="mobile-nav-admin-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Panel de Administración</span>
+          </button>
+        </li>
       </ul>
       <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         <a href="https://www.ubereats.com/ar/store/polleria-belgrano-bariloche/sfcrBjpYXWKCcMb91CNb-w?diningMode=DELIVERY&surfaceName=" 
@@ -1123,7 +1140,159 @@
     </div>
   </div>
 
+  <!-- =========================================================================
+       Modal: Panel de Administración (Gestión de Catálogo, Precios y Fotos)
+       ========================================================================= -->
+  <div id="admin-modal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title">
+    <div class="admin-modal-backdrop" id="admin-modal-backdrop"></div>
+    
+    <div class="admin-modal-container">
+      
+      <!-- Top Header -->
+      <div class="admin-modal-header">
+        <div class="admin-header-title-wrapper">
+          <div class="admin-header-icon" id="admin-lock-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 id="admin-modal-title" class="admin-modal-title">Panel de Administración</h3>
+            <p class="admin-modal-subtitle">Gestión de catálogo, precios y fotos · Pollería Belgrano</p>
+          </div>
+        </div>
+        <button id="admin-close-btn" class="admin-close-btn" title="Cerrar panel" aria-label="Cerrar panel">✕</button>
+      </div>
+
+      <!-- Notification Toast -->
+      <div id="admin-toast" class="admin-toast" role="status" aria-live="polite">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span id="admin-toast-text">Cambios guardados con éxito</span>
+      </div>
+
+      <!-- VISTA 1: Pantalla de Bloqueo por PIN -->
+      <div id="admin-pin-view" class="admin-pin-view">
+        <div class="admin-pin-card">
+          <div class="admin-pin-icon-large">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h4 class="admin-pin-title">Acceso Exclusivo Administración</h4>
+          <p class="admin-pin-desc">Ingresá el PIN de seguridad para modificar precios, cambiar imágenes o dar de alta nuevos productos.</p>
+          
+          <form id="admin-pin-form" class="admin-pin-form">
+            <input type="password" id="admin-pin-input" class="admin-pin-input" maxlength="10" placeholder="Ingresá el PIN (ej: 1234)" autofocus autocomplete="current-password">
+            <div id="admin-pin-error" class="admin-pin-error">PIN incorrecto. Probá con 1234 o belgrano.</div>
+            <button type="submit" class="btn btn-uber admin-pin-btn">Ingresar al Panel</button>
+          </form>
+          
+          <p class="admin-pin-hint">💡 <em>PIN de demostración: <strong>1234</strong></em></p>
+        </div>
+      </div>
+
+      <!-- VISTA 2: Panel Autenticado -->
+      <div id="admin-auth-view" class="admin-auth-view" style="display: none;">
+        
+        <!-- Barra de Pestañas de Admin -->
+        <div class="admin-tabs-bar">
+          <div class="admin-tabs-group">
+            <button class="admin-tab-btn active" data-admin-tab="edit">
+              Modificar Precios y Fotos (<span id="admin-total-count">20</span>)
+            </button>
+            <button class="admin-tab-btn" data-admin-tab="add">
+              ＋ Agregar Producto
+            </button>
+            <button class="admin-tab-btn" data-admin-tab="settings">
+              Ajustes & Respaldo
+            </button>
+          </div>
+          <div class="admin-live-indicator">
+            <span class="admin-pulse-dot"></span>
+            <span>Cambios guardados en vivo</span>
+          </div>
+        </div>
+
+        <!-- Pestaña 1: Modificar Precios y Fotos -->
+        <div id="admin-tab-edit" class="admin-tab-content active">
+          <div class="admin-search-wrapper">
+            <input type="text" id="admin-search-input" class="admin-search-input" placeholder="Buscar producto por nombre, corte o categoría para editar...">
+          </div>
+          <div id="admin-products-list" class="admin-products-list">
+            <!-- Filas de edición generadas dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Pestaña 2: Agregar Producto -->
+        <div id="admin-tab-add" class="admin-tab-content">
+          <form id="admin-add-product-form" class="admin-add-form">
+            <div class="admin-form-grid">
+              <div class="admin-form-group">
+                <label for="new-product-title">Nombre del Producto / Corte *</label>
+                <input type="text" id="new-product-title" required placeholder="Ej: Pechuga rellena especial">
+              </div>
+              <div class="admin-form-group">
+                <label for="new-product-category">Categoría *</label>
+                <select id="new-product-category" required>
+                  <option value="pollo">Pollo Fresco</option>
+                  <option value="elaborado" selected>Pollo Elaborado</option>
+                  <option value="promo">Pollo Promo</option>
+                  <option value="bebidas">Bebidas</option>
+                  <option value="almacen">Almacén</option>
+                </select>
+              </div>
+              <div class="admin-form-group">
+                <label for="new-product-price">Precio en ARS ($) *</label>
+                <input type="number" id="new-product-price" required min="0" step="100" placeholder="Ej: 24500">
+              </div>
+              <div class="admin-form-group">
+                <label for="new-product-image">URL o Ruta de la Foto</label>
+                <input type="text" id="new-product-image" placeholder="assets/images/... o https://..." value="assets/images/arrollado_pollo.jpg">
+              </div>
+            </div>
+            
+            <div class="admin-form-group">
+              <label for="new-product-desc">Descripción / Ingredientes *</label>
+              <textarea id="new-product-desc" rows="3" required placeholder="Detalle del corte, peso o ingredientes caseros..."></textarea>
+            </div>
+
+            <div class="admin-form-actions">
+              <button type="button" class="btn btn-secondary" id="admin-cancel-add-btn">Cancelar</button>
+              <button type="submit" class="btn btn-uber">Guardar y Agregar al Catálogo</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Pestaña 3: Ajustes & Respaldo -->
+        <div id="admin-tab-settings" class="admin-tab-content">
+          <div class="admin-settings-card">
+            <h4>Restablecer Catálogo Original</h4>
+            <p>Si deseás volver al estado inicial con todos los 20 cortes y precios oficiales verificados, podés reiniciar el catálogo con este botón.</p>
+            <button id="admin-reset-btn" class="btn-danger-outline" type="button">
+              ↺ Restablecer a valores de fábrica
+            </button>
+          </div>
+
+          <div class="admin-settings-card">
+            <h4>Respaldo de Datos (JSON)</h4>
+            <p>Copiá el contenido actual del catálogo para guardarlo como archivo o compartirlo.</p>
+            <button id="admin-export-btn" class="btn-amber" type="button">
+              Copiar Catálogo Completo (JSON)
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
   <!-- Scripts -->
+  <script src="js/products-data.js"></script>
   <script src="js/main.js"></script>
   <script>
     // Año dinámico en footer
