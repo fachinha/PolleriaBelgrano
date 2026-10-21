@@ -319,11 +319,150 @@ function initAdminPanel() {
   const pinForm = document.getElementById('admin-pin-form');
   const pinInput = document.getElementById('admin-pin-input');
   const pinError = document.getElementById('admin-pin-error');
+  const pinLockout = document.getElementById('admin-pin-lockout');
+  const pinAttempts = document.getElementById('admin-pin-attempts');
+  const pinSubmitBtn = document.getElementById('admin-pin-submit-btn');
   
   const toast = document.getElementById('admin-toast');
   const toastText = document.getElementById('admin-toast-text');
 
   if (!adminModal) return;
+
+  // Configuración de Seguridad Admin
+  const ADMIN_TARGET_HASH = '329b4995cf805dd0567b922ea7b19b92dfb7a44be13651671c497ca3f6eb18b0'; // GusYLucas2026!
+  const ADMIN_MAX_ATTEMPTS = 3;
+  const ADMIN_LOCKOUT_MS = 10 * 60 * 1000; // 10 min
+  const ADMIN_ATTEMPTS_KEY = 'polleria_admin_attempts';
+  const ADMIN_LOCKOUT_KEY = 'polleria_admin_locked_until';
+  let adminLockoutTimer = null;
+
+  async function hashAdminPassword(str) {
+    if (window.crypto && window.crypto.subtle) {
+      try {
+        const enc = new TextEncoder();
+        const buf = await window.crypto.subtle.digest('SHA-256', enc.encode(str));
+        return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (err) {}
+    }
+    return computeSha256Fallback(str);
+  }
+
+  function computeSha256Fallback(ascii) {
+    function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+    var mathPow = Math.pow, maxWord = mathPow(2, 32), lengthProperty = 'length', i, j, result = '', words = [];
+    var asciiBitLength = ascii[lengthProperty] * 8, hash = [], k = [], primeCounter = 0, isComposite = {};
+    for (var candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+        hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+      }
+    }
+    hash = hash.slice(0, 8);
+    ascii += '\x80';
+    while ((ascii[lengthProperty] % 64) - 56) ascii += '\x00';
+    for (i = 0; i < ascii[lengthProperty]; i++) {
+      j = ascii.charCodeAt(i);
+      words[i >> 2] |= j << (((3 - i) % 4) * 8);
+    }
+    words[words[lengthProperty]] = (asciiBitLength / maxWord) | 0;
+    words[words[lengthProperty]] = asciiBitLength;
+    for (j = 0; j < words[lengthProperty]; ) {
+      var w = words.slice(j, (j += 16)), oldHash = hash;
+      hash = hash.slice(0, 8);
+      for (i = 0; i < 64; i++) {
+        var w15 = w[i - 15], w2 = w[i - 2];
+        var s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
+        var s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
+        var ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+        var maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+        var temp1 = (hash[7] + (rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25)) + ch + k[i] + (w[i] = i < 16 ? w[i] : (w[i - 16] + s0 + w[i - 7] + s1) | 0)) | 0;
+        var temp2 = ((rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22)) + maj) | 0;
+        hash = [(temp1 + temp2) | 0].concat(hash);
+        hash[4] = (hash[4] + temp1) | 0;
+      }
+      for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+    for (i = 0; i < 8; i++) {
+      for (j = 3; j >= 0; j--) {
+        var b = (hash[i] >> (j * 8)) & 255;
+        result += (b < 16 ? '0' : '') + b.toString(16);
+      }
+    }
+    return result;
+  }
+
+  function getAdminAttempts() {
+    return parseInt(localStorage.getItem(ADMIN_ATTEMPTS_KEY) || '0', 10);
+  }
+
+  function getAdminLockedUntil() {
+    return parseInt(localStorage.getItem(ADMIN_LOCKOUT_KEY) || '0', 10);
+  }
+
+  function formatCountdown(ms) {
+    const totalSec = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+  }
+
+  function updateAdminAttemptsUI() {
+    if (!pinAttempts) return;
+    const attempts = getAdminAttempts();
+    const remaining = ADMIN_MAX_ATTEMPTS - attempts;
+    if (attempts > 0 && remaining > 0) {
+      pinAttempts.textContent = `Intentos restantes: ${remaining} de ${ADMIN_MAX_ATTEMPTS}`;
+    } else {
+      pinAttempts.textContent = '';
+    }
+  }
+
+  function startAdminLockout(until) {
+    if (adminLockoutTimer) clearInterval(adminLockoutTimer);
+    if (pinInput) pinInput.disabled = true;
+    if (pinSubmitBtn) pinSubmitBtn.disabled = true;
+    if (pinError) pinError.classList.remove('active');
+    if (pinAttempts) pinAttempts.textContent = '';
+
+    const tick = () => {
+      const diff = until - Date.now();
+      if (diff <= 0) {
+        clearInterval(adminLockoutTimer);
+        adminLockoutTimer = null;
+        localStorage.removeItem(ADMIN_ATTEMPTS_KEY);
+        localStorage.removeItem(ADMIN_LOCKOUT_KEY);
+        if (pinInput) pinInput.disabled = false;
+        if (pinSubmitBtn) pinSubmitBtn.disabled = false;
+        if (pinLockout) pinLockout.style.display = 'none';
+        updateAdminAttemptsUI();
+        if (pinInput) pinInput.focus();
+        return;
+      }
+      if (pinLockout) {
+        pinLockout.style.display = 'block';
+        pinLockout.innerHTML = `⚠️ <strong>Acceso bloqueado por seguridad</strong><br>Superaste los ${ADMIN_MAX_ATTEMPTS} intentos. Esperá <strong>${formatCountdown(diff)}</strong> para reintentar.`;
+      }
+    };
+    tick();
+    adminLockoutTimer = setInterval(tick, 1000);
+  }
+
+  function checkAdminSecurityState() {
+    const lockedUntil = getAdminLockedUntil();
+    if (lockedUntil > Date.now()) {
+      startAdminLockout(lockedUntil);
+    } else {
+      if (lockedUntil) {
+        localStorage.removeItem(ADMIN_ATTEMPTS_KEY);
+        localStorage.removeItem(ADMIN_LOCKOUT_KEY);
+      }
+      if (pinInput) pinInput.disabled = false;
+      if (pinSubmitBtn) pinSubmitBtn.disabled = false;
+      if (pinLockout) pinLockout.style.display = 'none';
+      updateAdminAttemptsUI();
+    }
+  }
 
   function showToast(message) {
     if (!toast || !toastText) return;
@@ -345,6 +484,7 @@ function initAdminPanel() {
       authView.style.display = 'none';
       if (pinInput) pinInput.value = '';
       if (pinError) pinError.classList.remove('active');
+      checkAdminSecurityState();
     }
   }
 
@@ -383,19 +523,52 @@ function initAdminPanel() {
     }
   });
 
-  // Manejo de PIN
+  // Manejo de PIN / Contraseña de Administración
   if (pinForm) {
-    pinForm.addEventListener('submit', (e) => {
+    pinForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const val = (pinInput.value || '').trim().toLowerCase();
-      if (val === '1234' || val === 'belgrano' || val === 'admin') {
+      if (getAdminLockedUntil() > Date.now()) return;
+
+      const val = (pinInput.value || '').trim();
+      if (!val) {
+        if (pinError) {
+          pinError.textContent = 'Por favor ingresá la contraseña.';
+          pinError.classList.add('active');
+        }
+        return;
+      }
+
+      if (pinSubmitBtn) pinSubmitBtn.disabled = true;
+      const hash = await hashAdminPassword(val);
+
+      if (hash === ADMIN_TARGET_HASH) {
         sessionStorage.setItem('polleria_admin_auth', 'true');
-        pinError.classList.remove('active');
+        localStorage.removeItem(ADMIN_ATTEMPTS_KEY);
+        localStorage.removeItem(ADMIN_LOCKOUT_KEY);
+        if (pinError) pinError.classList.remove('active');
+        if (pinLockout) pinLockout.style.display = 'none';
+        if (pinAttempts) pinAttempts.textContent = '';
         checkAuth();
         showToast('¡Acceso concedido al panel!');
       } else {
-        pinError.classList.add('active');
-        pinInput.focus();
+        const attempts = getAdminAttempts() + 1;
+        localStorage.setItem(ADMIN_ATTEMPTS_KEY, attempts.toString());
+        if (pinInput) pinInput.value = '';
+
+        if (attempts >= ADMIN_MAX_ATTEMPTS) {
+          const lockUntil = Date.now() + ADMIN_LOCKOUT_MS;
+          localStorage.setItem(ADMIN_LOCKOUT_KEY, lockUntil.toString());
+          startAdminLockout(lockUntil);
+        } else {
+          if (pinSubmitBtn) pinSubmitBtn.disabled = false;
+          const left = ADMIN_MAX_ATTEMPTS - attempts;
+          if (pinError) {
+            pinError.textContent = `Contraseña incorrecta. Te queda${left === 1 ? ' 1 intento.' : 'n ' + left + ' intentos.'}`;
+            pinError.classList.add('active');
+          }
+          updateAdminAttemptsUI();
+          if (pinInput) pinInput.focus();
+        }
       }
     });
   }

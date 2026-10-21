@@ -1194,12 +1194,12 @@
           <p class="admin-pin-desc">Ingresá el PIN de seguridad para modificar precios, cambiar imágenes o dar de alta nuevos productos.</p>
           
           <form id="admin-pin-form" class="admin-pin-form">
-            <input type="password" id="admin-pin-input" class="admin-pin-input" maxlength="10" placeholder="Ingresá el PIN (ej: 1234)" autofocus autocomplete="current-password">
-            <div id="admin-pin-error" class="admin-pin-error">PIN incorrecto. Probá con 1234 o belgrano.</div>
-            <button type="submit" class="btn btn-uber admin-pin-btn">Ingresar al Panel</button>
+            <input type="password" id="admin-pin-input" class="admin-pin-input" maxlength="32" placeholder="Ingresá la contraseña" autofocus autocomplete="current-password">
+            <div id="admin-pin-error" class="admin-pin-error"></div>
+            <div id="admin-pin-lockout" class="admin-pin-lockout" style="display: none;"></div>
+            <div id="admin-pin-attempts" class="admin-pin-attempts" style="font-size: 0.8rem; color: #a1a1aa; margin-top: 0.25rem;"></div>
+            <button type="submit" id="admin-pin-submit-btn" class="btn btn-uber admin-pin-btn">Ingresar al Panel</button>
           </form>
-          
-          <p class="admin-pin-hint">💡 <em>PIN de demostración: <strong>1234</strong></em></p>
         </div>
       </div>
 

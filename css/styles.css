@@ -1979,6 +1979,29 @@ button {
   letter-spacing: 0.05em;
 }
 
+.admin-pin-lockout {
+  padding: 0.65rem 0.85rem;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 0.84rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.admin-pin-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #111;
+}
+
+.admin-pin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
 .admin-pin-hint {
   font-size: 0.75rem;
   color: #a3b3a7;
